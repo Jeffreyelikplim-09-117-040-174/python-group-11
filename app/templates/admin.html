@@ -1,0 +1,614 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard - Dynamic Pricing Engine{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Sidebar -->
+    <div class="col-md-3">
+        <div class="list-group">
+            <a href="#dashboard" class="list-group-item list-group-item-action active" data-bs-toggle="list">
+                <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+            </a>
+            <a href="#products" class="list-group-item list-group-item-action" data-bs-toggle="list">
+                <i class="fas fa-box me-2"></i>Products
+            </a>
+            <a href="#pricing" class="list-group-item list-group-item-action" data-bs-toggle="list">
+                <i class="fas fa-chart-line me-2"></i>Dynamic Pricing
+            </a>
+            <a href="#users" class="list-group-item list-group-item-action" data-bs-toggle="list">
+                <i class="fas fa-users me-2"></i>Users
+            </a>
+            <a href="#analytics" class="list-group-item list-group-item-action" data-bs-toggle="list">
+                <i class="fas fa-chart-bar me-2"></i>Analytics
+            </a>
+        </div>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="col-md-9">
+        <div class="tab-content">
+            <!-- Dashboard Tab -->
+            <div class="tab-pane fade show active" id="dashboard">
+                <h2><i class="fas fa-tachometer-alt me-2"></i>Dashboard</h2>
+                
+                <div class="row mb-4">
+                    <div class="col-md-3">
+                        <div class="card bg-primary text-white">
+                            <div class="card-body">
+                                <h5 class="card-title">Total Products</h5>
+                                <h3 id="totalProducts">0</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-success text-white">
+                            <div class="card-body">
+                                <h5 class="card-title">Total Users</h5>
+                                <h3 id="totalUsers">0</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-warning text-white">
+                            <div class="card-body">
+                                <h5 class="card-title">Total Orders</h5>
+                                <h3 id="totalOrders">0</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-info text-white">
+                            <div class="card-body">
+                                <h5 class="card-title">Total Revenue</h5>
+                                <h3 id="totalRevenue">GHS 0.00</h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5>Recent Price Changes</h5>
+                            </div>
+                            <div class="card-body" id="recentPriceChanges">
+                                <!-- Price changes will be loaded here -->
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5>Quick Actions</h5>
+                            </div>
+                            <div class="card-body">
+                                <button class="btn btn-primary me-2" onclick="location.href='#products'">
+                                    <i class="fas fa-plus me-1"></i>Add Product
+                                </button>
+                                <button class="btn btn-success me-2" onclick="location.href='#pricing'">
+                                    <i class="fas fa-chart-line me-1"></i>Update Pricing
+                                </button>
+                                <button class="btn btn-info" onclick="location.href='#users'">
+                                    <i class="fas fa-users me-1"></i>Manage Users
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Products Tab -->
+            <div class="tab-pane fade" id="products">
+                <h2><i class="fas fa-box me-2"></i>Products</h2>
+                
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5>Product Management</h5>
+                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addProductModal">
+                            <i class="fas fa-plus me-1"></i>Add Product
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Name</th>
+                                        <th>Category</th>
+                                        <th>Base Price</th>
+                                        <th>Current Price</th>
+                                        <th>Stock</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="productsTableBody">
+                                    <!-- Products will be loaded here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Dynamic Pricing Tab -->
+            <div class="tab-pane fade" id="pricing">
+                <h2><i class="fas fa-chart-line me-2"></i>Dynamic Pricing</h2>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5>Update Product Price</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label for="productSelect" class="form-label">Select Product</label>
+                                    <select class="form-select" id="productSelect">
+                                        <option value="">Select Product</option>
+                                    </select>
+                                </div>
+                                <button class="btn btn-primary" onclick="updateProductPrice()">
+                                    <i class="fas fa-sync-alt me-1"></i>Update Price
+                                </button>
+                                <div id="priceUpdateResult" class="mt-3">
+                                    <!-- Price update results will be shown here -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5>Pricing Strategy</h5>
+                            </div>
+                            <div class="card-body">
+                                <p>Dynamic pricing is automatically applied based on:</p>
+                                <ul>
+                                    <li>Demand patterns</li>
+                                    <li>Competitor prices</li>
+                                    <li>Inventory levels</li>
+                                    <li>Seasonal trends</li>
+                                </ul>
+                                <button class="btn btn-info" onclick="retrainModel()">
+                                    <i class="fas fa-brain me-1"></i>Retrain Model
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Users Tab -->
+            <div class="tab-pane fade" id="users">
+                <h2><i class="fas fa-users me-2"></i>Users</h2>
+                
+                <div class="card">
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Username</th>
+                                        <th>Email</th>
+                                        <th>Role</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="usersTableBody">
+                                    <!-- Users will be loaded here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Analytics Tab -->
+            <div class="tab-pane fade" id="analytics">
+                <h2><i class="fas fa-chart-bar me-2"></i>Analytics</h2>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5>Sales Overview</h5>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="salesChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5>Product Performance</h5>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="productChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Product Modal -->
+<div class="modal fade" id="addProductModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add New Product</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addProductForm">
+                    <div class="mb-3">
+                        <label for="productName" class="form-label">Product Name</label>
+                        <input type="text" class="form-control" id="productName" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="productDescription" class="form-label">Description</label>
+                        <textarea class="form-control" id="productDescription" rows="3" required></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="productCategory" class="form-label">Category</label>
+                        <select class="form-select" id="productCategory" required>
+                            <option value="">Select Category</option>
+                            <option value="electronics">Electronics</option>
+                            <option value="clothing">Clothing</option>
+                            <option value="books">Books</option>
+                            <option value="home">Home & Garden</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="productBasePrice" class="form-label">Base Price (GHS)</label>
+                        <input type="number" class="form-control" id="productBasePrice" step="0.01" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="productStock" class="form-label">Stock Quantity</label>
+                        <input type="number" class="form-control" id="productStock" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="productImage" class="form-label">Image URL</label>
+                        <input type="url" class="form-control" id="productImage" placeholder="https://example.com/image.jpg">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="addProduct()">Add Product</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Check if user is admin and redirect if not
+document.addEventListener('DOMContentLoaded', async function() {
+    await checkAdminAccess();
+    // Only load data if admin access is confirmed
+    if (document.body.dataset.adminAccess === 'true') {
+        loadDashboardData();
+        loadProducts();
+        loadUsers();
+    }
+});
+
+async function checkAdminAccess() {
+    try {
+        const response = await fetch('/api/auth/me', {
+            headers: {
+                'Authorization': `Bearer ${getToken()}`
+            }
+        });
+        
+        if (response.ok) {
+            const user = await response.json();
+            if (user.role === 'admin') {
+                document.body.dataset.adminAccess = 'true';
+                return true;
+            } else {
+                showToast('Access denied. Admin privileges required.', 'error');
+                setTimeout(() => {
+                    window.location.href = '/';
+                }, 2000);
+                return false;
+            }
+        } else {
+            showToast('Please login as admin to access this page.', 'error');
+            setTimeout(() => {
+                window.location.href = '/';
+            }, 2000);
+            return false;
+        }
+    } catch (error) {
+        console.error('Error checking admin access:', error);
+        showToast('Authentication error.', 'error');
+        setTimeout(() => {
+            window.location.href = '/';
+        }, 2000);
+        return false;
+    }
+}
+
+async function loadDashboardData() {
+    try {
+        // Load stats
+        const statsResponse = await fetch('/api/admin/stats', {
+            headers: {
+                'Authorization': `Bearer ${getToken()}`
+            }
+        });
+        
+        if (!statsResponse.ok) {
+            throw new Error('Failed to load dashboard stats');
+        }
+        
+        const stats = await statsResponse.json();
+        
+        document.getElementById('totalProducts').textContent = stats.total_products;
+        document.getElementById('totalUsers').textContent = stats.total_users;
+        document.getElementById('totalOrders').textContent = stats.total_orders;
+        document.getElementById('totalRevenue').textContent = `GHS ${stats.total_revenue.toFixed(2)}`;
+        
+        // Load recent price changes
+        const priceChangesResponse = await fetch('/api/admin/recent-price-changes', {
+            headers: {
+                'Authorization': `Bearer ${getToken()}`
+            }
+        });
+        
+        if (priceChangesResponse.ok) {
+            const priceChanges = await priceChangesResponse.json();
+            
+            const priceChangesHtml = priceChanges.map(change => `
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div>
+                        <strong>${change.product_name}</strong>
+                        <br>
+                        <small class="text-muted">GHS${change.old_price} → GHS${change.new_price}</small>
+                    </div>
+                    <small class="text-muted">${new Date(change.created_at).toLocaleDateString()}</small>
+                </div>
+            `).join('');
+            
+            document.getElementById('recentPriceChanges').innerHTML = priceChangesHtml;
+        }
+        
+    } catch (error) {
+        console.error('Error loading dashboard data:', error);
+        showToast('Error loading dashboard data', 'error');
+    }
+}
+
+async function loadProducts() {
+    try {
+        const response = await fetch('/api/products/');
+        const products = await response.json();
+        
+        // Update products table
+        const tableBody = document.getElementById('productsTableBody');
+        tableBody.innerHTML = products.map(product => `
+            <tr>
+                <td>${product.id}</td>
+                <td>${product.name}</td>
+                <td>${product.category}</td>
+                <td>GHS${product.base_price.toFixed(2)}</td>
+                <td>GHS${product.current_price.toFixed(2)}</td>
+                <td>${product.stock_quantity}</td>
+                <td>
+                    <span class="badge bg-${product.is_active ? 'success' : 'danger'}">
+                        ${product.is_active ? 'Active' : 'Inactive'}
+                    </span>
+                </td>
+                <td>
+                    <button class="btn btn-sm btn-outline-primary" onclick="editProduct(${product.id})">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger" onclick="deleteProduct(${product.id})">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            </tr>
+        `).join('');
+        
+        // Update product select for pricing
+        const productSelect = document.getElementById('productSelect');
+        productSelect.innerHTML = '<option value="">Select Product</option>' + 
+            products.map(product => `<option value="${product.id}">${product.name}</option>`).join('');
+        
+    } catch (error) {
+        console.error('Error loading products:', error);
+        showToast('Error loading products', 'error');
+    }
+}
+
+async function loadUsers() {
+    try {
+        const response = await fetch('/api/admin/users', {
+            headers: {
+                'Authorization': `Bearer ${getToken()}`
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error('Failed to load users');
+        }
+        
+        const users = await response.json();
+        
+        const tableBody = document.getElementById('usersTableBody');
+        tableBody.innerHTML = users.map(user => `
+            <tr>
+                <td>${user.id}</td>
+                <td>${user.username}</td>
+                <td>${user.email}</td>
+                <td>
+                    <span class="badge bg-${user.role === 'admin' ? 'danger' : 'primary'}">
+                        ${user.role}
+                    </span>
+                </td>
+                <td>
+                    <span class="badge bg-${user.is_active ? 'success' : 'danger'}">
+                        ${user.is_active ? 'Active' : 'Inactive'}
+                    </span>
+                </td>
+                <td>
+                    <button class="btn btn-sm btn-outline-warning" onclick="toggleUserStatus(${user.id})">
+                        <i class="fas fa-toggle-on"></i>
+                    </button>
+                </td>
+            </tr>
+        `).join('');
+        
+    } catch (error) {
+        console.error('Error loading users:', error);
+        showToast('Error loading users', 'error');
+    }
+}
+
+async function addProduct() {
+    const formData = {
+        name: document.getElementById('productName').value,
+        description: document.getElementById('productDescription').value,
+        category: document.getElementById('productCategory').value,
+        base_price: parseFloat(document.getElementById('productBasePrice').value),
+        current_price: parseFloat(document.getElementById('productBasePrice').value),
+        stock_quantity: parseInt(document.getElementById('productStock').value),
+        image_url: document.getElementById('productImage').value
+    };
+    
+    try {
+        const response = await fetch('/api/products/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${getToken()}`
+            },
+            body: JSON.stringify(formData)
+        });
+        
+        if (response.ok) {
+            bootstrap.Modal.getInstance(document.getElementById('addProductModal')).hide();
+            loadProducts();
+            showToast('Product added successfully!', 'success');
+            // Clear form
+            document.getElementById('addProductForm').reset();
+        } else {
+            const error = await response.json();
+            showToast(error.detail, 'error');
+        }
+    } catch (error) {
+        console.error('Error adding product:', error);
+        showToast('Error adding product', 'error');
+    }
+}
+
+async function updateProductPrice() {
+    const productId = document.getElementById('productSelect').value;
+    if (!productId) {
+        showToast('Please select a product', 'error');
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/api/products/${productId}/update-price`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${getToken()}`
+            }
+        });
+        
+        if (response.ok) {
+            const result = await response.json();
+            document.getElementById('priceUpdateResult').innerHTML = `
+                <div class="alert alert-success">
+                    <strong>Price Updated!</strong><br>
+                    Old Price: GHS${result.old_price.toFixed(2)}<br>
+                    New Price: GHS${result.new_price.toFixed(2)}
+                </div>
+            `;
+            loadProducts();
+        } else {
+            const error = await response.json();
+            showToast(error.detail, 'error');
+        }
+    } catch (error) {
+        console.error('Error updating price:', error);
+        showToast('Error updating price', 'error');
+    }
+}
+
+async function toggleUserStatus(userId) {
+    try {
+        const response = await fetch(`/api/admin/users/${userId}/toggle-status`, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `Bearer ${getToken()}`
+            }
+        });
+        
+        if (response.ok) {
+            loadUsers();
+            showToast('User status updated successfully!', 'success');
+        } else {
+            const error = await response.json();
+            showToast(error.detail, 'error');
+        }
+    } catch (error) {
+        console.error('Error toggling user status:', error);
+        showToast('Error updating user status', 'error');
+    }
+}
+
+async function retrainModel() {
+    try {
+        const response = await fetch('/api/analytics/retrain-model', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${getToken()}`
+            }
+        });
+        
+        if (response.ok) {
+            showToast('Model retraining initiated successfully!', 'success');
+        } else {
+            const error = await response.json();
+            showToast(error.detail, 'error');
+        }
+    } catch (error) {
+        console.error('Error retraining model:', error);
+        showToast('Error retraining model', 'error');
+    }
+}
+
+function getToken() {
+    return localStorage.getItem('access_token');
+}
+
+function showToast(message, type = 'info') {
+    // Simple toast implementation
+    const toast = document.createElement('div');
+    toast.className = `alert alert-${type === 'error' ? 'danger' : type} alert-dismissible fade show position-fixed`;
+    toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999;';
+    toast.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.remove();
+    }, 3000);
+}
+</script>
+{% endblock %} 

@@ -1,0 +1,506 @@
+{% extends "base.html" %}
+
+{% block title %}Analytics Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h3 mb-0">Analytics Dashboard</h1>
+                <button class="btn btn-primary" onclick="refreshAnalytics()">
+                    <i class="fas fa-sync-alt me-2"></i>Refresh
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Key Metrics Cards -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Total Revenue (GHS)
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800" id="total-revenue">0</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Total Orders
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800" id="total-orders">0</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-shopping-cart fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                Active Users
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800" id="active-users">0</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-users fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Price Changes
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800" id="price-changes">0</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-chart-line fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="row">
+        <!-- Revenue Chart -->
+        <div class="col-xl-8 col-lg-7">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">Revenue Overview</h6>
+                    <div class="dropdown no-arrow">
+                        <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink"
+                            data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
+                        </a>
+                        <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in"
+                            aria-labelledby="dropdownMenuLink">
+                            <div class="dropdown-header">Chart Options:</div>
+                            <a class="dropdown-item" href="#" onclick="updateRevenueChart('7d')">Last 7 Days</a>
+                            <a class="dropdown-item" href="#" onclick="updateRevenueChart('30d')">Last 30 Days</a>
+                            <a class="dropdown-item" href="#" onclick="updateRevenueChart('90d')">Last 90 Days</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="chart-area">
+                        <canvas id="revenueChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Price Changes Chart -->
+        <div class="col-xl-4 col-lg-5">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">Price Changes</h6>
+                </div>
+                <div class="card-body">
+                    <div class="chart-pie pt-4 pb-2">
+                        <canvas id="priceChangesChart"></canvas>
+                    </div>
+                    <div class="mt-4 text-center small">
+                        <span class="mr-2">
+                            <i class="fas fa-circle text-success"></i> Increases
+                        </span>
+                        <span class="mr-2">
+                            <i class="fas fa-circle text-danger"></i> Decreases
+                        </span>
+                        <span class="mr-2">
+                            <i class="fas fa-circle text-info"></i> Stable
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Product Performance Table -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Product Performance</h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered" id="productTable" width="100%" cellspacing="0">
+                            <thead>
+                                <tr>
+                                    <th>Product</th>
+                                    <th>Category</th>
+                                    <th>Base Price (GHS)</th>
+                                    <th>Current Price (GHS)</th>
+                                    <th>Price Change (%)</th>
+                                    <th>Sales</th>
+                                    <th>Revenue (GHS)</th>
+                                    <th>Stock</th>
+                                </tr>
+                            </thead>
+                            <tbody id="productTableBody">
+                                <!-- Data will be loaded dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ML Model Performance -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">ML Model Performance</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <h4 id="model-accuracy">0%</h4>
+                                <p class="text-muted">Prediction Accuracy</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <h4 id="model-revenue">0%</h4>
+                                <p class="text-muted">Revenue Improvement</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <h4 id="model-orders">0%</h4>
+                                <p class="text-muted">Order Increase</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <button class="btn btn-primary" onclick="retrainModel()">
+                                    <i class="fas fa-sync-alt"></i> Retrain Model
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Loading Spinner -->
+<div id="loadingSpinner" class="d-none">
+    <div class="d-flex justify-content-center">
+        <div class="spinner-border text-primary" role="status">
+            <span class="sr-only">Loading...</span>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+let revenueChart, priceChangesChart;
+let updateInterval;
+
+// Initialize analytics on page load
+document.addEventListener('DOMContentLoaded', function() {
+    loadAnalytics();
+    initializeCharts();
+    
+    // Set up real-time updates every 30 seconds
+    updateInterval = setInterval(loadAnalytics, 30000);
+});
+
+// Cleanup interval when page is unloaded
+window.addEventListener('beforeunload', function() {
+    if (updateInterval) {
+        clearInterval(updateInterval);
+    }
+});
+
+// Manual refresh function
+function refreshAnalytics() {
+    loadAnalytics();
+    showAlert('Analytics refreshed', 'info');
+}
+
+function showLoading() {
+    document.getElementById('loadingSpinner').classList.remove('d-none');
+}
+
+function hideLoading() {
+    document.getElementById('loadingSpinner').classList.add('d-none');
+}
+
+async function loadAnalytics() {
+    try {
+        // Load key metrics
+        const metricsResponse = await fetch('/api/analytics/metrics');
+        const metrics = await metricsResponse.json();
+        
+        document.getElementById('total-revenue').textContent = 'GHS ' + metrics.total_revenue.toFixed(2);
+        document.getElementById('total-orders').textContent = metrics.total_orders;
+        document.getElementById('active-users').textContent = metrics.active_users;
+        document.getElementById('price-changes').textContent = metrics.price_changes;
+        
+        // Load product analytics
+        const productsResponse = await fetch('/api/analytics/products');
+        const products = await productsResponse.json();
+        updateProductTable(products);
+        
+        // Update charts
+        updateCharts();
+        
+    } catch (error) {
+        console.error('Error loading analytics:', error);
+        showAlert('Error loading analytics data', 'danger');
+    }
+}
+
+function updateProductTable(products) {
+    const tbody = document.getElementById('productTableBody');
+    tbody.innerHTML = '';
+    
+    products.forEach(product => {
+        const row = document.createElement('tr');
+        const priceChangeClass = product.price_change > 0 ? 'text-success' : 
+                                product.price_change < 0 ? 'text-danger' : 'text-muted';
+        const priceChange = product.price_change > 0 ? '+' + product.price_change : product.price_change;
+        
+        row.innerHTML = `
+            <td>${product.name}</td>
+            <td>${product.category}</td>
+            <td>${product.base_price.toFixed(2)}</td>
+            <td>${product.current_price.toFixed(2)}</td>
+            <td class="${priceChangeClass}">${priceChange}%</td>
+            <td>${product.sales_count}</td>
+            <td>${product.revenue.toFixed(2)}</td>
+            <td>${product.stock_quantity}</td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+function initializeCharts() {
+    // Revenue Chart
+    const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+    revenueChart = new Chart(revenueCtx, {
+        type: 'line',
+        data: {
+            labels: [],
+            datasets: [{
+                label: 'Revenue (GHS)',
+                data: [],
+                borderColor: 'rgb(78, 115, 223)',
+                backgroundColor: 'rgba(78, 115, 223, 0.05)',
+                borderWidth: 2,
+                fill: true
+            }]
+        },
+        options: {
+            maintainAspectRatio: false,
+            scales: {
+                xAxes: [{
+                    gridLines: {
+                        display: false,
+                        drawBorder: false
+                    },
+                    ticks: {
+                        maxTicksLimit: 7
+                    }
+                }],
+                yAxes: [{
+                    ticks: {
+                        maxTicksLimit: 5,
+                        padding: 10,
+                        callback: function(value, index, values) {
+                            return 'GHS ' + value.toFixed(0);
+                        }
+                    },
+                    gridLines: {
+                        color: "rgb(234, 236, 244)",
+                        zeroLineColor: "rgb(234, 236, 244)",
+                        drawBorder: false,
+                        borderDash: [2],
+                        zeroLineBorderDash: [2]
+                    }
+                }]
+            },
+            legend: {
+                display: false
+            },
+            tooltips: {
+                backgroundColor: "rgb(255,255,255)",
+                bodyFontColor: "#858796",
+                titleMarginBottom: 10,
+                titleFontColor: '#6e707e',
+                titleFontSize: 14,
+                borderColor: '#dddfeb',
+                borderWidth: 1,
+                xPadding: 15,
+                yPadding: 15,
+                displayColors: false,
+                intersect: false,
+                mode: 'index',
+                caretPadding: 10,
+                callbacks: {
+                    label: function(tooltipItem, chart) {
+                        var datasetLabel = chart.datasets[tooltipItem.datasetIndex].label || '';
+                        return datasetLabel + ': GHS ' + tooltipItem.yLabel.toFixed(2);
+                    }
+                }
+            }
+        }
+    });
+
+    // Price Changes Chart
+    const priceCtx = document.getElementById('priceChangesChart').getContext('2d');
+    priceChangesChart = new Chart(priceCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Increases', 'Decreases', 'Stable'],
+            datasets: [{
+                data: [0, 0, 0],
+                backgroundColor: ['#1cc88a', '#e74a3b', '#36b9cc'],
+                hoverBackgroundColor: ['#17a673', '#d52a1a', '#2c9faf'],
+                hoverBorderColor: "rgba(234, 236, 244, 1)",
+            }]
+        },
+        options: {
+            maintainAspectRatio: false,
+            tooltips: {
+                backgroundColor: "rgb(255,255,255)",
+                bodyFontColor: "#858796",
+                borderColor: '#dddfeb',
+                borderWidth: 1,
+                xPadding: 15,
+                yPadding: 15,
+                displayColors: false,
+                caretPadding: 10,
+            },
+            legend: {
+                display: false
+            },
+            cutoutPercentage: 80,
+        }
+    });
+
+    // Load initial chart data
+    updateCharts();
+}
+
+async function updateCharts() {
+    try {
+        const response = await fetch('/api/analytics/chart-data');
+        const data = await response.json();
+
+        // Update revenue chart
+        revenueChart.data.labels = data.revenue.labels;
+        revenueChart.data.datasets[0].data = data.revenue.data;
+        revenueChart.update();
+
+        // Update price changes chart
+        priceChangesChart.data.datasets[0].data = [
+            data.price_changes.increases,
+            data.price_changes.decreases,
+            data.price_changes.stable
+        ];
+        priceChangesChart.update();
+
+    } catch (error) {
+        console.error('Error updating charts:', error);
+    }
+}
+
+async function updateRevenueChart(period) {
+    try {
+        const response = await fetch(`/api/analytics/revenue?period=${period}`);
+        const data = await response.json();
+
+        revenueChart.data.labels = data.labels;
+        revenueChart.data.datasets[0].data = data.data;
+        revenueChart.update();
+
+    } catch (error) {
+        console.error('Error updating revenue chart:', error);
+    }
+}
+
+async function retrainModel() {
+    if (!confirm('Are you sure you want to retrain the ML model? This may take several minutes.')) {
+        return;
+    }
+
+    showLoading();
+    try {
+        const response = await fetch('/api/analytics/retrain-model', {
+            method: 'POST'
+        });
+        
+        if (response.ok) {
+            showAlert('Model retraining started successfully', 'success');
+            // Reload analytics after a delay
+            setTimeout(loadAnalytics, 5000);
+        } else {
+            throw new Error('Failed to retrain model');
+        }
+    } catch (error) {
+        console.error('Error retraining model:', error);
+        showAlert('Error retraining model', 'danger');
+    } finally {
+        hideLoading();
+    }
+}
+
+function showAlert(message, type) {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    `;
+    
+    const container = document.querySelector('.container-fluid');
+    container.insertBefore(alertDiv, container.firstChild);
+    
+    // Auto-dismiss after 5 seconds
+    setTimeout(() => {
+        alertDiv.remove();
+    }, 5000);
+}
+</script>
+{% endblock %} 

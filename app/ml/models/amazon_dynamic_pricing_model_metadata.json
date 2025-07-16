@@ -1,0 +1,25 @@
+{
+  "feature_columns": [
+    "price_log",
+    "title_length",
+    "word_count",
+    "category_encoded",
+    "cat_mean_price",
+    "cat_std_price",
+    "price_percentile",
+    "views",
+    "add_to_cart",
+    "purchases",
+    "conversion_rate",
+    "stock_percentage",
+    "competitor_price",
+    "price_ratio",
+    "month"
+  ],
+  "training_date": "2025-07-09 04:11:25.691648",
+  "metrics": {
+    "mse": 1058.0352783203125,
+    "r2": 0.9924129336939795
+  },
+  "dataset": "Amazon Product Dataset (Synthetic)"
+}

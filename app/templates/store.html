@@ -1,0 +1,389 @@
+{% extends "base.html" %}
+
+{% block title %}Store - Dynamic Pricing Engine{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Filters Sidebar -->
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-filter me-2"></i>Filters</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label for="categoryFilter" class="form-label">Category</label>
+                    <select class="form-select" id="categoryFilter">
+                        <option value="">All Categories</option>
+                        <option value="electronics">Electronics</option>
+                        <option value="clothing">Clothing</option>
+                        <option value="books">Books</option>
+                        <option value="home">Home & Garden</option>
+                    </select>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="priceRange" class="form-label">Price Range</label>
+                    <div class="d-flex gap-2">
+                        <input type="number" class="form-control" id="minPrice" placeholder="Min">
+                        <input type="number" class="form-control" id="maxPrice" placeholder="Max">
+                    </div>
+                </div>
+                
+                <button class="btn btn-primary w-100" onclick="applyFilters()">
+                    <i class="fas fa-search me-2"></i>Apply Filters
+                </button>
+            </div>
+        </div>
+        
+        <!-- Dynamic Pricing Info -->
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6><i class="fas fa-chart-line me-2"></i>Dynamic Pricing</h6>
+            </div>
+            <div class="card-body">
+                <p class="small text-muted">
+                    Our AI-powered system adjusts prices in real-time based on:
+                </p>
+                <ul class="small">
+                    <li>Market demand</li>
+                    <li>Competitor prices</li>
+                    <li>User behavior</li>
+                    <li>Seasonal factors</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Products Grid -->
+    <div class="col-md-9">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>Products</h2>
+            <div class="d-flex gap-2">
+                <button class="btn btn-outline-secondary" onclick="sortProducts('name')">
+                    <i class="fas fa-sort-alpha-down me-1"></i>Name
+                </button>
+                <button class="btn btn-outline-secondary" onclick="sortProducts('price')">
+                    <i class="fas fa-sort-numeric-down me-1"></i>Price
+                </button>
+                <a href="/checkout" class="btn btn-success ms-2">
+                    <i class="fas fa-credit-card me-1"></i>Checkout
+                </a>
+            </div>
+        </div>
+        
+        <!-- Products Loading -->
+        <div id="productsLoading" class="text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2">Loading products...</p>
+        </div>
+        
+        <!-- Products Grid -->
+        <div id="productsGrid" class="row g-4" style="display: none;">
+            <!-- Products will be loaded here dynamically -->
+        </div>
+        
+        <!-- No Products Message -->
+        <div id="noProducts" class="text-center py-5" style="display: none;">
+            <i class="fas fa-box-open fa-3x text-muted mb-3"></i>
+            <h4>No products found</h4>
+            <p class="text-muted">Try adjusting your filters or check back later.</p>
+        </div>
+    </div>
+</div>
+
+<!-- Product Detail Modal -->
+<div class="modal fade" id="productModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="productModalTitle">Product Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <img id="productModalImage" src="" alt="Product" class="img-fluid rounded">
+                    </div>
+                    <div class="col-md-6">
+                        <h4 id="productModalName"></h4>
+                        <p class="text-muted" id="productModalCategory"></p>
+                        <p id="productModalDescription"></p>
+                        
+                        <div class="mb-3">
+                            <h3 class="text-primary" id="productModalPrice"></h3>
+                            <small class="text-muted">Base Price: GHS <span id="productModalBasePrice"></span></small>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="productQuantity" class="form-label">Quantity</label>
+                            <input type="number" class="form-control" id="productQuantity" value="1" min="1">
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-primary" onclick="addToCartFromModal()">
+                                <i class="fas fa-cart-plus me-2"></i>Add to Cart
+                            </button>
+                        </div>
+                        
+                        <!-- Price History Chart -->
+                        <div class="mt-4">
+                            <h6>Price History</h6>
+                            <canvas id="priceHistoryChart" width="400" height="200"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+let products = [];
+let currentProduct = null;
+
+// Load products on page load
+document.addEventListener('DOMContentLoaded', function() {
+    loadProducts();
+    updateCartCount();
+});
+
+async function loadProducts() {
+    try {
+        const response = await fetch('/api/products/');
+        products = await response.json();
+        displayProducts(products);
+    } catch (error) {
+        console.error('Error loading products:', error);
+        showNoProducts();
+    }
+}
+
+function displayProducts(productsToShow) {
+    const grid = document.getElementById('productsGrid');
+    const loading = document.getElementById('productsLoading');
+    const noProducts = document.getElementById('noProducts');
+    
+    loading.style.display = 'none';
+    
+    if (productsToShow.length === 0) {
+        grid.style.display = 'none';
+        noProducts.style.display = 'block';
+        return;
+    }
+    
+    grid.style.display = 'flex';
+    noProducts.style.display = 'none';
+    
+    grid.innerHTML = productsToShow.map(product => `
+        <div class="col-md-4 col-lg-3">
+            <div class="card h-100 product-card">
+                <img src="${product.image_url || '/static/images/placeholder.jpg'}" 
+                     class="card-img-top" alt="${product.name}">
+                <div class="card-body d-flex flex-column">
+                    <h6 class="card-title">${product.name}</h6>
+                    <p class="card-text text-muted small">${product.category}</p>
+                    <div class="mt-auto">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h5 class="text-primary mb-0">GHS ${product.current_price.toFixed(2)}</h5>
+                            <small class="text-muted">Base: GHS ${product.base_price.toFixed(2)}</small>
+                        </div>
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-outline-primary btn-sm" 
+                                    onclick="viewProduct(${product.id})">
+                                <i class="fas fa-eye me-1"></i>View Details
+                            </button>
+                            <button class="btn btn-primary btn-sm" 
+                                    onclick="addToCart(${product.id})">
+                                <i class="fas fa-cart-plus me-1"></i>Add to Cart
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+async function viewProduct(productId) {
+    try {
+        const response = await fetch(`/api/products/${productId}`);
+        const product = await response.json();
+        currentProduct = product;
+        
+        // Update modal content
+        document.getElementById('productModalTitle').textContent = product.name;
+        document.getElementById('productModalName').textContent = product.name;
+        document.getElementById('productModalCategory').textContent = product.category;
+        document.getElementById('productModalDescription').textContent = product.description || 'No description available.';
+        document.getElementById('productModalPrice').textContent = `GHS ${product.current_price.toFixed(2)}`;
+        document.getElementById('productModalBasePrice').textContent = product.base_price.toFixed(2);
+        document.getElementById('productModalImage').src = product.image_url || '/static/images/placeholder.jpg';
+        
+        // Load price history
+        await loadPriceHistory(productId);
+        
+        // Show modal
+        new bootstrap.Modal(document.getElementById('productModal')).show();
+    } catch (error) {
+        console.error('Error loading product details:', error);
+        alert('Error loading product details');
+    }
+}
+
+async function loadPriceHistory(productId) {
+    try {
+        const response = await fetch(`/api/products/${productId}/price-history`);
+        const priceHistory = await response.json();
+        
+        const ctx = document.getElementById('priceHistoryChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: priceHistory.map(ph => new Date(ph.created_at).toLocaleDateString()),
+                datasets: [{
+                    label: 'Price',
+                    data: priceHistory.map(ph => ph.price),
+                    borderColor: 'rgb(75, 192, 192)',
+                    tension: 0.1
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: false
+                    }
+                }
+            }
+        });
+    } catch (error) {
+        console.error('Error loading price history:', error);
+    }
+}
+
+async function addToCart(productId, quantity = 1) {
+    if (!getToken()) {
+        showToast('Please login to add items to cart', 'error');
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/api/cart/add/${productId}?quantity=${quantity}`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${getToken()}`
+            }
+        });
+        
+        if (response.ok) {
+            // Load cart items to update the count
+            await loadCart();
+            showToast('Product added to cart!', 'success');
+        } else {
+            const error = await response.json();
+            showToast(error.detail, 'error');
+        }
+    } catch (error) {
+        console.error('Error adding to cart:', error);
+        showToast('Error adding to cart', 'error');
+    }
+}
+
+function addToCartFromModal() {
+    const quantity = parseInt(document.getElementById('productQuantity').value);
+    if (currentProduct) {
+        addToCart(currentProduct.id, quantity);
+        bootstrap.Modal.getInstance(document.getElementById('productModal')).hide();
+    }
+}
+
+function applyFilters() {
+    const category = document.getElementById('categoryFilter').value;
+    const minPrice = parseFloat(document.getElementById('minPrice').value) || 0;
+    const maxPrice = parseFloat(document.getElementById('maxPrice').value) || Infinity;
+    
+    let filteredProducts = products.filter(product => {
+        const categoryMatch = !category || product.category === category;
+        const priceMatch = product.current_price >= minPrice && product.current_price <= maxPrice;
+        return categoryMatch && priceMatch;
+    });
+    
+    displayProducts(filteredProducts);
+}
+
+function sortProducts(criteria) {
+    let sortedProducts = [...products];
+    
+    if (criteria === 'name') {
+        sortedProducts.sort((a, b) => a.name.localeCompare(b.name));
+    } else if (criteria === 'price') {
+        sortedProducts.sort((a, b) => a.current_price - b.current_price);
+    }
+    
+    displayProducts(sortedProducts);
+}
+
+function showNoProducts() {
+    document.getElementById('productsLoading').style.display = 'none';
+    document.getElementById('productsGrid').style.display = 'none';
+    document.getElementById('noProducts').style.display = 'block';
+}
+
+function getToken() {
+    return localStorage.getItem('access_token');
+}
+
+function showToast(message, type = 'info') {
+    // Simple toast implementation
+    const toast = document.createElement('div');
+    toast.className = `alert alert-${type === 'error' ? 'danger' : type} alert-dismissible fade show position-fixed`;
+    toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999;';
+    toast.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.remove();
+    }, 3000);
+}
+
+// Load cart items
+async function loadCart() {
+    if (!getToken()) return;
+    
+    try {
+        const response = await fetch('/api/cart/', {
+            headers: {
+                'Authorization': `Bearer ${getToken()}`
+            }
+        });
+        
+        if (response.ok) {
+            const cartItems = await response.json();
+            updateCartCount(cartItems.length);
+        }
+    } catch (error) {
+        console.error('Error loading cart:', error);
+    }
+}
+
+// Update cart count
+function updateCartCount(count = 0) {
+    const cartIcon = document.getElementById('cartIcon');
+    if (cartIcon) {
+        const badge = cartIcon.querySelector('.badge');
+        if (badge) {
+            badge.textContent = count;
+        }
+    }
+}
+</script>
+{% endblock %} 

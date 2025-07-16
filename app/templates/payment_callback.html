@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+
+{% block title %}Payment Processing{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-body text-center">
+                    <div id="loadingState">
+                        <i class="fas fa-spinner fa-spin fa-3x text-primary mb-3"></i>
+                        <h4>Processing Payment...</h4>
+                        <p class="text-muted">Please wait while we verify your payment.</p>
+                        <div class="progress mt-3">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    
+                    <div id="successState" style="display: none;">
+                        <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+                        <h4 class="text-success">Payment Successful!</h4>
+                        <p class="text-muted">Your order has been confirmed.</p>
+                        <div class="alert alert-success">
+                            <strong>Order ID:</strong> <span id="orderId"></span><br>
+                            <strong>Reference:</strong> <span id="paymentRef"></span>
+                        </div>
+                        <p>You will receive a confirmation email shortly.</p>
+                        <a href="/store" class="btn btn-primary">Continue Shopping</a>
+                        <a href="/orders" class="btn btn-outline-primary">View Orders</a>
+                    </div>
+                    
+                    <div id="errorState" style="display: none;">
+                        <i class="fas fa-exclamation-triangle fa-3x text-danger mb-3"></i>
+                        <h4 class="text-danger">Payment Failed</h4>
+                        <p class="text-muted">There was an issue processing your payment.</p>
+                        <div class="alert alert-danger">
+                            <strong>Error:</strong> <span id="errorMessage"></span>
+                        </div>
+                        <a href="/checkout" class="btn btn-primary">Try Again</a>
+                        <a href="/store" class="btn btn-outline-secondary">Back to Store</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Check for payment parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    const reference = urlParams.get('reference');
+    const trxref = urlParams.get('trxref');
+    const status = urlParams.get('status');
+    
+    if (reference || trxref) {
+        const paymentRef = reference || trxref;
+        
+        // Update progress bar
+        const progressBar = document.querySelector('.progress-bar');
+        let progress = 0;
+        const interval = setInterval(() => {
+            progress += 10;
+            if (progressBar) {
+                progressBar.style.width = progress + '%';
+            }
+            if (progress >= 100) {
+                clearInterval(progressBar);
+            }
+        }, 200);
+        
+        // Verify payment with backend
+        fetch(`/api/orders/verify-payment/${paymentRef}`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${getToken()}`
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            clearInterval(interval);
+            
+            if (data.status === 'success') {
+                // Show success state
+                document.getElementById('loadingState').style.display = 'none';
+                document.getElementById('successState').style.display = 'block';
+                document.getElementById('orderId').textContent = data.order_id;
+                document.getElementById('paymentRef').textContent = paymentRef;
+            } else {
+                // Show error state
+                document.getElementById('loadingState').style.display = 'none';
+                document.getElementById('errorState').style.display = 'block';
+                document.getElementById('errorMessage').textContent = data.message || 'Payment verification failed';
+            }
+        })
+        .catch(error => {
+            clearInterval(interval);
+            console.error('Payment verification error:', error);
+            
+            // Show error state
+            document.getElementById('loadingState').style.display = 'none';
+            document.getElementById('errorState').style.display = 'block';
+            document.getElementById('errorMessage').textContent = 'Payment verification failed. Please contact support.';
+        });
+    } else {
+        // No payment reference found
+        document.getElementById('loadingState').style.display = 'none';
+        document.getElementById('errorState').style.display = 'block';
+        document.getElementById('errorMessage').textContent = 'No payment reference found.';
+    }
+});
+
+// Get authentication token
+function getToken() {
+    return localStorage.getItem('access_token');
+}
+</script>
+{% endblock %} 
